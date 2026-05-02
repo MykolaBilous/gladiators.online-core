@@ -108,6 +108,23 @@ export function shouldAttackNow(
     return false;
   }
 
+  // A fighter who is already being targeted by an in-flight attack cannot also
+  // launch their own attack at the same time (they're occupied blocking/dodging).
+  // Exception: if both fighters committed to attacking within a short window
+  // (≤300 ms apart) treat it as a simultaneous exchange and allow both.
+  const SIMULTANEITY_WINDOW_MS = 300;
+  const blockedByIncoming = context.pendingResolutions.some(
+    (pending) =>
+      pending.action.defenderId === brain.id &&
+      (pending.action.actionType === "strike" || pending.action.actionType === "javelin") &&
+      pending.action.timeMs + pending.action.movement.durationMs + pending.action.impactDelayMs >
+        timeMs &&
+      timeMs - pending.action.timeMs > SIMULTANEITY_WINDOW_MS,
+  );
+  if (blockedByIncoming) {
+    return false;
+  }
+
   brain.usingShortSword = isVelesGladiator(brain.gladiator)
     ? brain.javelinsLeft <= 0 || dangerousClose
     : false;

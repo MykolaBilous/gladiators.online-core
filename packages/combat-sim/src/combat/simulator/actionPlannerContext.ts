@@ -40,16 +40,22 @@ export function createBattleActionPlannerContext({
   const traps = new Map();
   const pendingResolutions: PendingActionResolution[] = [];
   const actions: PlannedAction[] = [];
-  const brains: FighterBrain[] = gladiators.map((gladiator, index) => ({
-    id: gladiator.id,
-    gladiator,
-    nextDecisionMs: Math.round(randomBetween(900, 1_650) + index * randomBetween(120, 360)),
-    tactic: "balanced",
-    targetId: null,
-    netThrown: false,
-    javelinsLeft: getStartingJavelinCount(gladiator),
-    usingShortSword: false,
-  }));
+  const teamIndexCounter = new Map<string, number>();
+  const brains: FighterBrain[] = gladiators.map((gladiator) => {
+    const team = teams[gladiator.id] ?? "left";
+    const teamIndex = teamIndexCounter.get(team) ?? 0;
+    teamIndexCounter.set(team, teamIndex + 1);
+    return {
+      id: gladiator.id,
+      gladiator,
+      nextDecisionMs: Math.round(randomBetween(900, 1_650) + teamIndex * randomBetween(120, 360)),
+      tactic: "balanced",
+      targetId: null,
+      netThrown: false,
+      javelinsLeft: getStartingJavelinCount(gladiator),
+      usingShortSword: false,
+    };
+  });
 
   const context = {
     actions,
