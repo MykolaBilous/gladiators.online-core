@@ -28,8 +28,7 @@ export function estimateImpactDelay(
         ? randomBetween(1_050, 1_850)
         : randomBetween(460, 720);
   const quickness =
-    attacker.dexterity * 0.52 +
-    attacker.speed * 0.28 +
+    attacker.dexterity * 0.58 +
     attacker.endurance * 0.12 +
     attacker.focus * 12;
   const rushFactor = rush && actionType !== "javelin" ? 0.96 : 1;

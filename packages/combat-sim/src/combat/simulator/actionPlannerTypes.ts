@@ -2,6 +2,7 @@
 import type {
   BattleDecisionSnapshot,
   BattleFighterRuntime,
+  BattleMotionSegment,
   BattlePoint,
   BattleTeamId,
 } from "../battleTypes.js";
@@ -16,6 +17,7 @@ import type {
 
 export interface BattleSimulationResult {
   actions: PlannedAction[];
+  motionTracks: Record<string, BattleMotionSegment[]>;
   winnerId: string;
   loserId: string;
   winnerTeamId: BattleTeamId;
@@ -35,6 +37,7 @@ export interface BattleActionPlannerContext {
   currentHp: Map<string, number>;
   damageByFighter: Map<string, number>;
   motions: Map<string, FighterMotionState>;
+  motionTracks: Map<string, BattleMotionSegment[]>;
   traps: Map<string, FighterTrapState>;
   pendingResolutions: PendingActionResolution[];
   brains: FighterBrain[];

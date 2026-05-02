@@ -1,4 +1,4 @@
-﻿import type { BattlePoint } from "../battleTypes.js";
+import type { BattleActionType, BattleMotionSegment, BattlePoint } from "../battleTypes.js";
 import type { FighterMotionState } from "../battleSimulatorTypes.js";
 import { clamp, clonePoint } from "./math.js";
 
@@ -44,6 +44,69 @@ export function createMotionStates(
       ];
     }),
   );
+}
+
+export function createMotionTracks(
+  fighterIds: readonly string[],
+): Map<string, BattleMotionSegment[]> {
+  return new Map(fighterIds.map((fighterId) => [fighterId, []]));
+}
+
+export function appendMotionSegment(
+  motionTracks: Map<string, BattleMotionSegment[]>,
+  segment: {
+    readonly fighterId: string;
+    readonly from: BattlePoint;
+    readonly to: BattlePoint;
+    readonly startMs: number;
+    readonly endMs: number;
+    readonly actionType: BattleActionType;
+    readonly rush: boolean;
+  },
+): void {
+  if (segment.endMs <= segment.startMs) {
+    return;
+  }
+
+  const track = motionTracks.get(segment.fighterId);
+  if (!track) {
+    throw new Error(`Missing motion track for fighter: ${segment.fighterId}`);
+  }
+
+  const previous = track.at(-1);
+  if (previous && previous.endMs > segment.startMs) {
+    previous.to = clonePoint(segment.from);
+    previous.endMs = segment.startMs;
+
+    if (previous.endMs <= previous.startMs) {
+      track.pop();
+    }
+  }
+
+  track.push({
+    fighterId: segment.fighterId,
+    from: clonePoint(segment.from),
+    to: clonePoint(segment.to),
+    startMs: segment.startMs,
+    endMs: segment.endMs,
+    actionType: segment.actionType,
+    rush: segment.rush,
+  });
+}
+
+export function toMotionTrackRecord(
+  fighterIds: readonly string[],
+  motionTracks: ReadonlyMap<string, readonly BattleMotionSegment[]>,
+): Record<string, BattleMotionSegment[]> {
+  return fighterIds.reduce<Record<string, BattleMotionSegment[]>>((acc, fighterId) => {
+    acc[fighterId] = (motionTracks.get(fighterId) ?? []).map((segment) => ({
+      ...segment,
+      from: clonePoint(segment.from),
+      to: clonePoint(segment.to),
+    }));
+
+    return acc;
+  }, {});
 }
 
 export function getFighterPosition(

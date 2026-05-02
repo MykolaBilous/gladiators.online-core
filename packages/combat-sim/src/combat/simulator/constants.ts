@@ -5,14 +5,14 @@ export const JAVELIN_ATTACK_CSS_CLASS = "attack-javelin-throw";
 export const VELES_CLASS_ID = "veles";
 export const SHIELD_CLASS_IDS = new Set(["murmillo"]);
 export const JAVELIN_STARTING_COUNT = 3;
+export const MAX_REACH_DISTANCE = metersToArenaDistance(6);
 export const DEFAULT_STRIKE_REACH = createArenaReach(1);
 export const DEFAULT_NET_REACH = createArenaReach(2);
 export const DEFAULT_JAVELIN_REACH = {
   min: 0,
   preferred: metersToArenaDistance(6),
-  max: 2,
+  max: MAX_REACH_DISTANCE,
 };
-export const MAX_REACH_DISTANCE = 2;
 export const MIN_REACH_WIDTH = metersToArenaDistance(0.08);
 export const REACH_TOLERANCE = 0;
 export const MIN_MOVEMENT_DISTANCE = metersToArenaDistance(0.06);

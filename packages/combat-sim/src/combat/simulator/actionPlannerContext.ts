@@ -7,7 +7,7 @@ import {
   recoverEnergy,
 } from "./energy.js";
 import { clamp } from "./math.js";
-import { createMotionStates } from "./movement.js";
+import { createMotionStates, createMotionTracks } from "./movement.js";
 import { randomBetween } from "./random.js";
 import { getRuntime } from "./runtime.js";
 import type {
@@ -37,6 +37,7 @@ export function createBattleActionPlannerContext({
   );
   const damageByFighter = new Map(fighterIds.map((fighterId) => [fighterId, 0]));
   const motions = createMotionStates(fighterIds, startPositions);
+  const motionTracks = createMotionTracks(fighterIds);
   const traps = new Map();
   const pendingResolutions: PendingActionResolution[] = [];
   const actions: PlannedAction[] = [];
@@ -64,6 +65,7 @@ export function createBattleActionPlannerContext({
     currentHp,
     damageByFighter,
     motions,
+    motionTracks,
     traps,
     pendingResolutions,
     brains,

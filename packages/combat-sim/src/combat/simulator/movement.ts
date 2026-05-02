@@ -6,6 +6,7 @@ import type {
   BattleActionType,
   BattleFighterRuntime,
   BattleMovement,
+  BattleMotionSegment,
   BattlePoint,
   BattleTactic,
   BattleTeamId,
@@ -20,11 +21,16 @@ import {
 } from "./constants.js";
 import { clamp, clonePoint, getDistance } from "./math.js";
 import {
+  createFighterFootprints,
+  getFighterBodyRadius,
+  resolveDestinationByFootprint,
+} from "./footprints.js";
+import {
   clampPoint,
   getSideSign,
   keepPointOnHomeSide,
 } from "./movementGeometry.js";
-import { getFighterPosition } from "./motionState.js";
+import { appendMotionSegment, getFighterPosition, getMotionPosition } from "./motionState.js";
 import { randomBetween } from "./random.js";
 import {
   chooseReachDistance,
@@ -42,10 +48,13 @@ export {
   keepPointOnHomeSide,
 } from "./movementGeometry.js";
 export {
+  appendMotionSegment,
   createMotionStates,
+  createMotionTracks,
   getFighterPosition,
   getMotionPosition,
   interpolatePoint,
+  toMotionTrackRecord,
 } from "./motionState.js";
 
 export function getSteadyStepDistance(
@@ -53,8 +62,8 @@ export function getSteadyStepDistance(
   actionType: BattleActionType,
   rush: boolean,
 ): number {
-  const dexterityRatio = clamp((fighter.dexterity - 35) / 75, 0, 1);
-  const baseStep = ARENA_STANDARD_STEP_DISTANCE * (0.92 + dexterityRatio * 0.16);
+  const classSpeedRatio = clamp(fighter.movementSpeed / 0.56, 0.82, 1.08);
+  const baseStep = ARENA_STANDARD_STEP_DISTANCE * classSpeedRatio;
   const actionFactor =
     actionType === "recover"
       ? 0.86
@@ -260,6 +269,7 @@ function estimateMoveDuration(
   }
 
   const speedFactor = clamp(82 / fighter.mobility, 0.62, 1.76);
+  const classSpeedFactor = clamp(0.56 / fighter.movementSpeed, 0.86, 1.32);
   const enduranceFactor = clamp(
     1.12 - fighter.endurance / 360 - (fighter.stamina - 1) * 0.16,
     0.78,
@@ -272,6 +282,7 @@ function estimateMoveDuration(
     (distance / ARENA_STANDARD_STEP_DISTANCE) *
       STEP_DURATION_MS *
       speedFactor *
+      classSpeedFactor *
       enduranceFactor *
       rushFactor
   );
@@ -284,6 +295,8 @@ export function createMovement(
   actionType: BattleActionType,
   fighters: Record<string, BattleFighterRuntime>,
   motions: Map<string, FighterMotionState>,
+  motionTracks: Map<string, BattleMotionSegment[]>,
+  activeFighterIds: readonly string[],
   timeMs: number,
   rush: boolean,
   attackerTactic: BattleTactic,
@@ -335,10 +348,19 @@ export function createMovement(
           attackerTactic,
           intendedReach,
         );
-  const attackerTo = limitPointToSteadyStep(
+  const limitedAttackerTo = limitPointToSteadyStep(
     attackerFrom,
     plannedAttackerTo,
     getSteadyStepDistance(attacker, actionType, rush),
+  );
+  const attackerTo = resolveFighterDestination(
+    attackerId,
+    defenderFrom,
+    limitedAttackerTo,
+    fighters,
+    motions,
+    activeFighterIds,
+    timeMs,
   );
   const attackerDistance = getDistance(attackerFrom, attackerTo);
   const attackerDuration = estimateMoveDuration(attackerDistance, attacker, rush);
@@ -358,6 +380,15 @@ export function createMovement(
     startMs: timeMs,
     endMs: timeMs + attackerDurationMs,
   });
+  appendMotionSegment(motionTracks, {
+    fighterId: attackerId,
+    from: attackerFrom,
+    to: attackerTo,
+    startMs: timeMs,
+    endMs: timeMs + attackerDurationMs,
+    actionType,
+    rush,
+  });
 
   return {
     attackerFrom,
@@ -371,4 +402,34 @@ export function createMovement(
     defenderRush: false,
     distance: getDistance(attackerTo, defenderFrom),
   };
+}
+
+function resolveFighterDestination(
+  fighterId: string,
+  defenderFrom: BattlePoint,
+  point: BattlePoint,
+  fighters: Record<string, BattleFighterRuntime>,
+  motions: Map<string, FighterMotionState>,
+  activeFighterIds: readonly string[],
+  timeMs: number,
+): BattlePoint {
+  const futurePoints = new Map<string, BattlePoint>();
+
+  for (const activeFighterId of activeFighterIds) {
+    const motion = motions.get(activeFighterId);
+    if (!motion) {
+      continue;
+    }
+
+    futurePoints.set(activeFighterId, getMotionPosition(motion, Math.max(timeMs, motion.endMs)));
+  }
+
+  const radius = getFighterBodyRadius(fighters, fighterId);
+  const footprints = createFighterFootprints(activeFighterIds, fighters, futurePoints, fighterId);
+  const fallbackDirection = {
+    x: point.x - defenderFrom.x,
+    y: point.y - defenderFrom.y,
+  };
+
+  return resolveDestinationByFootprint(point, radius, footprints, fallbackDirection);
 }

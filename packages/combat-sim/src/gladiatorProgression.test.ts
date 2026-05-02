@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createEmptyStatPoints,
   deriveGladiatorStats,
+  gladiatorStatKeys,
   murmillo,
   retiarius,
 } from "./index.js";
@@ -29,5 +30,11 @@ describe("deriveGladiatorStats", () => {
         murmillo.stats.defense + murmillo.statMultipliers.defense,
       ),
     });
+  });
+
+  it("does not expose movement speed as a trainable stat", () => {
+    expect(gladiatorStatKeys).not.toContain("speed");
+    expect(createEmptyStatPoints()).not.toHaveProperty("speed");
+    expect(murmillo).toHaveProperty("movementSpeed");
   });
 });

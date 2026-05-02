@@ -7,6 +7,7 @@ import type {
 } from "./battleTypes.js";
 import { createActions } from "./simulator/createActions.js";
 import { createStartPositions } from "./simulator/movement.js";
+import { separateStartPositionsByFootprint } from "./simulator/footprints.js";
 import {
   getResolvedDurationMs,
   trimEventsAfterDefeat,
@@ -28,6 +29,7 @@ export type {
   BattleFatigueSnapshot,
   BattleFighterRuntime,
   BattleMovement,
+  BattleMotionSegment,
   BattleNetTrap,
   BattleOutcome,
   BattlePlan,
@@ -89,7 +91,11 @@ function createSeededBattlePlan(
     fighters[gladiator.id] = createRuntime(gladiator);
   }
 
-  const startPositions = createStartPositions(gladiators, resolvedTeams, requestedStartPositions);
+  const startPositions = separateStartPositionsByFootprint(
+    createStartPositions(gladiators, resolvedTeams, requestedStartPositions),
+    fighters,
+    resolvedTeams,
+  );
   const simulation = createActions(
     gladiators,
     fighters,
@@ -115,6 +121,7 @@ function createSeededBattlePlan(
     loserId: simulation.loserId,
     fighters,
     startPositions,
+    motionTracks: simulation.motionTracks,
     events,
   };
 }

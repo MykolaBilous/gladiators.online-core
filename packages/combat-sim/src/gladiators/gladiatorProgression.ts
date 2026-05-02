@@ -10,7 +10,6 @@ export const gladiatorStatKeys = [
   "hp",
   "attack",
   "defense",
-  "speed",
   "dexterity",
   "endurance",
 ] as const satisfies readonly GladiatorStatKey[];
@@ -25,7 +24,6 @@ export function createEmptyStatPoints(): GladiatorStatPoints {
     hp: 0,
     attack: 0,
     defense: 0,
-    speed: 0,
     dexterity: 0,
     endurance: 0,
   };

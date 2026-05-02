@@ -75,9 +75,9 @@ export function estimateNextDecisionDelay(
   const tacticFactor =
     tactic === "press" ? 0.82 : tactic === "counter" ? 1.08 : tactic === "recover" ? 1.32 : 1;
   const fatigueFactor = energyRatio < 0.34 ? 1.38 : energyRatio > 0.72 ? 0.88 : 1;
-  const speedFactor = clamp(1.18 - fighter.dexterity / 360 - fighter.speed / 520, 0.72, 1.16);
+  const quicknessFactor = clamp(1.16 - fighter.dexterity / 330, 0.76, 1.16);
 
-  return Math.round(baseDelay * tacticFactor * fatigueFactor * speedFactor);
+  return Math.round(baseDelay * tacticFactor * fatigueFactor * quicknessFactor);
 }
 
 export function shouldAttackNow(

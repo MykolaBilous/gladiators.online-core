@@ -21,6 +21,16 @@ export interface BattleMovement {
   distance: number;
 }
 
+export interface BattleMotionSegment {
+  fighterId: string;
+  from: BattlePoint;
+  to: BattlePoint;
+  startMs: number;
+  endMs: number;
+  actionType: BattleActionType;
+  rush: boolean;
+}
+
 export interface BattleNetTrap {
   escaped: boolean;
   durationMs: number;
@@ -57,13 +67,14 @@ export interface BattleFighterRuntime {
   recoveryRate: number;
   attack: number;
   defense: number;
-  speed: number;
+  movementSpeed: number;
   dexterity: number;
   endurance: number;
   mobility: number;
   focus: number;
   stamina: number;
   aggression: number;
+  bodyRadius: number;
 }
 
 export interface BattleEvent {
@@ -97,5 +108,6 @@ export interface BattlePlan {
   teams: Record<string, BattleTeamId>;
   fighters: Record<string, BattleFighterRuntime>;
   startPositions: Record<string, BattlePoint>;
+  motionTracks: Record<string, BattleMotionSegment[]>;
   events: BattleEvent[];
 }

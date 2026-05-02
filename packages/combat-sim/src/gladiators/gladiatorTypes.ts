@@ -2,7 +2,6 @@ export interface GladiatorStats {
   hp: number;
   attack: number;
   defense: number;
-  speed: number;
   dexterity: number;
   endurance: number;
 }
@@ -32,6 +31,7 @@ export interface GladiatorClass {
   description: string;
   weapon: string;
   defense: string;
+  movementSpeed: number;
   stats: GladiatorStats;
   statMultipliers: GladiatorStatMultipliers;
   attacks: GladiatorAttack[];

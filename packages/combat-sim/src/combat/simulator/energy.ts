@@ -9,6 +9,7 @@ import type { FighterEnergyState } from "../battleSimulatorTypes.js";
 import { MIN_MOVEMENT_DISTANCE, MOVEMENT_ENERGY_PER_STEP } from "./constants.js";
 import { clamp } from "./math.js";
 import { randomBetween } from "./random.js";
+import { calculateRuntimeMobility } from "./runtime.js";
 
 export function createEnergyState(fighter: BattleFighterRuntime): FighterEnergyState {
   return {
@@ -68,24 +69,23 @@ export function applyFatigueToFighter(
   const energyRatio = clamp(state.energy / state.maxEnergy, 0, 1);
   const winded = isWinded(state, timeMs);
   const pressure = 1 - energyRatio;
-  const movementMultiplier = winded ? 0.5 + energyRatio * 0.22 : 1 - pressure * 0.18;
+  const coordinationMultiplier = winded ? 0.5 + energyRatio * 0.22 : 1 - pressure * 0.18;
   const actionMultiplier = winded ? 0.64 + energyRatio * 0.18 : 1 - pressure * 0.12;
   const defenseMultiplier = winded ? 0.66 + energyRatio * 0.18 : 1 - pressure * 0.1;
   const enduranceMultiplier = winded ? 0.68 + energyRatio * 0.16 : 1 - pressure * 0.08;
-  const speed = fighter.speed * movementMultiplier;
-  const dexterity = fighter.dexterity * movementMultiplier;
+  const dexterity = fighter.dexterity * coordinationMultiplier;
   const endurance = fighter.endurance * enduranceMultiplier;
-  const mobility = speed * 0.5 + dexterity * 0.34 + endurance * 0.16;
+  const focus = fighter.focus * (winded ? 0.88 : 1 - pressure * 0.04);
+  const mobility = calculateRuntimeMobility(dexterity, endurance, focus);
 
   return {
     ...fighter,
     attack: fighter.attack * actionMultiplier,
     defense: fighter.defense * defenseMultiplier,
-    speed,
     dexterity,
     endurance,
     mobility,
-    focus: fighter.focus * (winded ? 0.88 : 1 - pressure * 0.04),
+    focus,
   };
 }
 
@@ -96,7 +96,7 @@ export function applyInjuryToFighter(
   const healthRatio = clamp(currentHp / fighter.maxHp, 0, 1);
   const injuryPressure = 1 - healthRatio;
   const badlyHurt = healthRatio <= 0.34;
-  const movementMultiplier = badlyHurt
+  const coordinationMultiplier = badlyHurt
     ? 0.72 + healthRatio * 0.4
     : 1 - injuryPressure * 0.16;
   const actionMultiplier = badlyHurt
@@ -108,20 +108,19 @@ export function applyInjuryToFighter(
   const enduranceMultiplier = badlyHurt
     ? 0.78 + healthRatio * 0.24
     : 1 - injuryPressure * 0.1;
-  const speed = fighter.speed * movementMultiplier;
-  const dexterity = fighter.dexterity * movementMultiplier;
+  const dexterity = fighter.dexterity * coordinationMultiplier;
   const endurance = fighter.endurance * enduranceMultiplier;
-  const mobility = speed * 0.5 + dexterity * 0.34 + endurance * 0.16;
+  const focus = fighter.focus * (badlyHurt ? 0.9 : 1 - injuryPressure * 0.05);
+  const mobility = calculateRuntimeMobility(dexterity, endurance, focus);
 
   return {
     ...fighter,
     attack: fighter.attack * actionMultiplier,
     defense: fighter.defense * defenseMultiplier,
-    speed,
     dexterity,
     endurance,
     mobility,
-    focus: fighter.focus * (badlyHurt ? 0.9 : 1 - injuryPressure * 0.05),
+    focus,
   };
 }
 
